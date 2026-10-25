@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Task Calendar</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --fg: #ececec;
+            --mut: #9ca3af;
+            --card: #141414;
+            --line: #2e2e2e;
+            --acc: #60a5fa;
+            --green: #22c55e;
+            --orange: #f59e0b;
+            --red: #ef4444;
+            --gray: #64748b;
+            color-scheme: dark
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            margin: 0
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--fg);
+            font: 15px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh
+        }
+
+        button,
+        input,
+        textarea {
+            font: inherit;
+            color: inherit
+        }
+
+        button {
+            cursor: pointer;
+            border: 1px solid var(--line);
+            background: var(--card);
+            padding: 7px 13px;
+            border-radius: 7px
+        }
+
+        button.p {
+            background: var(--acc);
+            border-color: var(--acc);
+            color: #001018;
+            font-weight: 600;
+            box-shadow: 0 0 10px var(--acc)
+        }
+
+        button:hover {
+            border-color: var(--acc);
+            box-shadow: 0 0 8px var(--acc)
+        }
+
+        button.d {
+            color: var(--red)
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--acc);
+            box-shadow: 0 0 8px var(--acc)
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            background: var(--bg)
+        }
+
+        textarea {
+            min-height: 90px;
+            resize: vertical
+        }
+
+        .wrap {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 14px
+        }
+
+        .bar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 12px
+        }
+
+        .sp {
+            flex: 1
+        }
+
+        h1 {
+            font-size: 19px;
+            margin: 0;
+            color: var(--acc);
+            text-shadow: 0 0 10px var(--acc)
+        }
+
+        h2 {
+            margin: 0 0 8px;
+            font-size: 22px
+        }
+
+        .auth {
+            box-shadow: 0 0 24px #00f0ff40;
+            max-width: 340px;
+            margin: 12vh auto;
+            padding: 22px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--card)
+        }
+
+        .auth input {
+            margin: 6px 0
+        }
+
+        .err {
+            color: var(--red);
+            min-height: 20px;
+            font-size: 13px
+        }
+
+        .lnk {
+            background: none;
+            border: 0;
+            color: var(--acc);
+            padding: 0
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 4px
+        }
+
+        .dow {
+            font-size: 12px;
+            color: var(--mut);
+            text-align: center;
+            padding: 4px 0
+        }
+
+        .day {
+            min-height: 96px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            background: var(--bg)
+        }
+
+        .day.out {
+            opacity: .45
+        }
+
+        .day.today {
+            border-color: var(--orange);
+            border-width: 2px;
+            box-shadow: 0 0 12px var(--orange)
+        }
+
+        .day .n {
+            font-size: 12px;
+            color: var(--mut);
+            margin-bottom: 2px
+        }
+
+        .t {
+            display: block;
+            width: 100%;
+            text-align: left;
+            font-size: 12px;
+            padding: 2px 6px;
+            margin-top: 2px;
+            border: 0;
+            border-left: 4px solid;
+            border-radius: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .t.done {
+            border-color: var(--green);
+            background: #22c55e26;
+            box-shadow: 0 0 8px #39ff1488;
+            text-decoration: line-through
+        }
+
+        .t.today {
+            border-color: var(--orange);
+            background: #f59e0b2e;
+            box-shadow: 0 0 8px #ff9d0088
+        }
+
+        .t.late {
+            border-color: var(--red);
+            background: #ef444426;
+            box-shadow: 0 0 8px #ff174488
+        }
+
+        .t.fut {
+            border-color: var(--gray);
+            background: #64748b33;
+            box-shadow: 0 0 8px #b026ff88
+        }
+
+        .leg {
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+            color: var(--mut);
+            margin-top: 10px;
+            flex-wrap: wrap
+        }
+
+        .leg i {
+            box-shadow: 0 0 6px currentColor;
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            margin-right: 4px
+        }
+
+        .ov {
+            position: fixed;
+            inset: 0;
+            background: #000b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+            z-index: 5
+        }
+
+        .md {
+            box-shadow: 0 0 22px #00f0ff55;
+            background: var(--bg);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 16px;
+            width: 100%;
+            max-width: 460px;
+            max-height: 90vh;
+            overflow: auto
+        }
+
+        .md label {
+            display: block;
+            font-size: 12px;
+            color: var(--mut);
+            margin: 10px 0 3px
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 14px;
+            align-items: center
+        }
+
+        .x {
+            background: none;
+            border: 0;
+            font-size: 20px;
+            padding: 0 6px
+        }
+
+        .md img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 6px
+        }
+
+        .ro {
+            font-size: 13px;
+            background: var(--card);
+            padding: 6px 10px;
+            border-radius: 7px
+        }
+
+        /* ---- light theme (dark neon stays the default) ---- */
+        :root[data-theme="light"] {
+            --bg: #ffffff;
+            --fg: #1f2328;
+            --mut: #6b7280;
+            --card: #f3f4f6;
+            --line: #d9dce1;
+            --acc: #2563eb;
+            --green: #16a34a;
+            --orange: #ea8a0c;
+            --red: #dc2626;
+            --gray: #64748b;
+            color-scheme: light
+        }
+
+        * {
+            box-shadow: none !important;
+            text-shadow: none !important
+        }
+
+        [data-theme="light"] button.p {
+            color: #fff
+        }
+
+        [data-theme="light"] .ov {
+            background: #0006
+        }
+
+        [data-theme="light"] .t.done {
+            background: #16a34a26
+        }
+
+        [data-theme="light"] .t.today {
+            background: #ea8a0c2e
+        }
+
+        [data-theme="light"] .t.late {
+            background: #dc262626
+        }
+
+        [data-theme="light"] .t.fut {
+            background: #64748b22
+        }
+
+        .tg {
+            position: fixed;
+            right: 12px;
+            bottom: 12px;
+            z-index: 20;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            padding: 0;
+            font-size: 20px
+        }
+
+        @media(max-width:600px) {
+            .day {
+                min-height: 70px
+            }
+
+            .t {
+                font-size: 11px
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+    <button class="tg" id="tg" aria-label="Toggle dark/light mode"></button>
+    <script>
+        const $ = s => document.querySelector(s), app = $('#app');
+        // Theme toggle: the saved choice wins; first visit defaults to dark
+        function setTheme(t, keep) { document.documentElement.dataset.theme = t; const b = $('#tg'); b.textContent = t === 'dark' ? '☀️' : '🌙'; b.title = t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'; if (keep) { try { localStorage.setItem('tc_theme', t) } catch (e) { } } }
+        let saved = null; try { saved = localStorage.getItem('tc_theme') } catch (e) { }
+        setTheme(saved === 'light' ? 'light' : 'dark', false);
+        $('#tg').onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true);
+        const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        const todayS = () => iso(new Date());
+        let user = null, isAdmin = false, tasks = [], shared = null, view = new Date(); view.setDate(1);
+        const token = location.pathname.startsWith('/s/') ? location.pathname.slice(3) : null;
+
+        async function api(method, url, body) {
+            const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+            const j = await r.json().catch(() => ({}));
+            if (!r.ok) { const e = new Error(j.error || 'Request failed'); e.status = r.status; throw e }
+            return j
+        }
+        function status(t) { if (t.done) return 'done'; const n = todayS(); return t.date === n ? 'today' : t.date < n ? 'late' : 'fut' }
+
+        // Decision dialog: asks the user to pick between two buttons
+        function ask(msg, yes, no) {
+            return new Promise(r => {
+                const o = document.createElement('div'); o.className = 'ov'; o.style.zIndex = 9;
+                o.innerHTML = `<div class="md" style="max-width:340px"><p style="margin-top:0">${esc(msg)}</p><div class="row"><button data-v="0">${esc(no)}</button><button class="p" data-v="1">${esc(yes)}</button></div></div>`;
+                o.onclick = e => { const v = e.target.dataset?.v; if (v !== undefined) { o.remove(); r(v === '1') } }; document.body.appendChild(o)
+            })
+        }
+
+        function authView(mode) {
+            app.innerHTML = `<div class="auth"><h1>📅 Task Calendar</h1><p style="color:var(--mut)">${mode === 'reg' ? 'Create an account' : 'Log in to your calendar'}</p>
+<input id="u" placeholder="Username" autocomplete="username"><input id="p" type="password" placeholder="Password" autocomplete="${mode === 'reg' ? 'new-password' : 'current-password'}">
+${mode === 'reg' ? '<input id="p2" type="password" placeholder="Confirm password">' : ''}<div class="err" id="e"></div>
+<button class="p" id="go" style="width:100%">${mode === 'reg' ? 'Register' : 'Login'}</button>
+<p style="font-size:13px">${mode === 'reg' ? 'Have an account? <button class="lnk" id="sw">Login</button>' : 'New here? <button class="lnk" id="sw">Register</button>'}</p></div>`;
+            $('#sw').onclick = () => authView(mode === 'reg' ? 'login' : 'reg');
+            $('#go').onclick = async () => {
+                const e = $('#e'), u = $('#u').value, p = $('#p').value;
+                if (mode === 'reg' && p !== $('#p2').value) { e.textContent = 'Passwords do not match.'; return }
+                try { const r = await api('POST', mode === 'reg' ? '/api/register' : '/api/login', { username: u, password: p }); user = r.username; isAdmin = !!r.is_admin; await loadTasks(); main() }
+                catch (x) { e.textContent = x.message }
+            };
+            $('#p').onkeydown = e => { if (e.key === 'Enter') $('#go').click() }
+        }
+
+        async function loadTasks() { tasks = await api('GET', '/api/tasks') }
+
+        function main() {
+            const ro = !!shared, list = ro ? shared.tasks : tasks;
+            const y = view.getFullYear(), m = view.getMonth(), start = new Date(y, m, 1 - new Date(y, m, 1).getDay());
+            let cells = ''; for (let i = 0; i < 42; i++) {
+                const d = new Date(start); d.setDate(start.getDate() + i); const ds = iso(d);
+                const ts = list.filter(t => t.date === ds).map(t => `<button class="t ${status(t)}" data-id="${t.id}">${esc(t.title)}</button>`).join('');
+                cells += `<div class="day ${d.getMonth() !== m ? 'out' : ''} ${ds === todayS() ? 'today' : ''}" data-d="${ds}"><div class="n">${d.getDate()}</div>${ts}</div>`
+            }
+            app.innerHTML = `<div class="wrap"><div class="bar"><h1>📅 ${ro ? esc(shared.by) + "'s Calendar" : 'Task Calendar'}</h1><span class="sp"></span>
+${ro ? '<span class="ro">View only (shared)</span>' : `<span style="color:var(--mut)">${esc(user)}</span>${isAdmin ? '<button id="adm">🛡 Admin</button>' : ''}<button id="sh">🔗 Share link</button><button id="pw">Password</button><button id="lo">Logout</button>`}</div>
+<div class="bar"><button id="pv">‹</button><h2 style="margin:0">${view.toLocaleString('en', { month: 'long', year: 'numeric' })}</h2><button id="nx">›</button><button id="td">Today</button><span class="sp"></span>${ro ? '' : '<button class="p" id="ad">+ New task</button>'}</div>
+<div class="grid">${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(x => `<div class="dow">${x}</div>`).join('')}${cells}</div>
+<div class="leg"><span><i style="background:var(--green)"></i>Done</span><span><i style="background:var(--orange)"></i>Due today</span><span><i style="background:var(--red)"></i>Past due</span><span><i style="background:var(--gray)"></i>Upcoming</span></div></div>`;
+            $('#pv').onclick = () => { view.setMonth(m - 1); main() }; $('#nx').onclick = () => { view.setMonth(m + 1); main() };
+            $('#td').onclick = () => { view = new Date(); view.setDate(1); main() };
+            app.querySelectorAll('.t').forEach(b => b.onclick = e => { e.stopPropagation(); editor(list.find(t => String(t.id) === b.dataset.id), ro) });
+            if (!ro) {
+                const blank = d => ({ id: null, title: '', date: d, notes: '', link: '', img: '', done: false });
+                app.querySelectorAll('.day').forEach(c => c.onclick = () => editor(blank(c.dataset.d), false));
+                $('#ad').onclick = () => editor(blank(todayS()), false);
+                $('#lo').onclick = async () => { if (await ask('Log out of your account?', 'Logout', 'Cancel')) { await api('POST', '/api/logout'); user = null; isAdmin = false; tasks = []; authView('login') } };
+                $('#sh').onclick = share; $('#pw').onclick = passwordDlg; if (isAdmin) $('#adm').onclick = adminDlg
+            }
+        }
+
+        function modal(html) { const o = document.createElement('div'); o.className = 'ov'; o.innerHTML = `<div class="md">${html}</div>`; document.body.appendChild(o); return o }
+        function passwordDlg() {
+            const o = modal(`<h2 style="font-size:17px">Change password</h2><input id="o1" type="password" placeholder="Current password"><div style="height:6px"></div><input id="n1" type="password" placeholder="New password (6+ characters)"><div class="err" id="pe"></div><div class="row"><button id="pc">Cancel</button><button class="p" id="ps">Save</button></div>`);
+            o.querySelector('#pc').onclick = () => o.remove();
+            o.querySelector('#ps').onclick = async () => {
+                if (!await ask('Change your password?', 'Save', 'Cancel')) return;
+                try { await api('POST', '/api/password', { old: o.querySelector('#o1').value, new: o.querySelector('#n1').value }); o.remove(); alert('Password changed.') } catch (x) { o.querySelector('#pe').textContent = x.message }
+            }
+        }
+        async function adminDlg() {
+            const o = modal('<p>Loading…</p>');
+            async function draw() {
+                const us = await api('GET', '/api/admin/users');
+                o.firstChild.innerHTML = `<div class="row" style="margin:0 0 8px"><h2 style="font-size:17px;margin:0;flex:1">Admin: users</h2><button class="x" id="ac">✕</button></div>
+<table style="width:100%;border-collapse:collapse;font-size:14px">${us.map(u => `<tr style="border-top:1px solid var(--line)"><td style="padding:6px 0">${esc(u.username)}${u.is_admin ? ' 🛡' : ''}<br><small style="color:var(--mut)">${u.tasks} tasks</small></td><td style="text-align:right">${u.is_admin ? '' : `<button data-r="${u.id}">Reset pw</button> <button class="d" data-d="${u.id}">Delete</button>`}</td></tr>`).join('')}</table>`;
+                o.querySelector('#ac').onclick = () => o.remove();
+                o.querySelectorAll('[data-d]').forEach(b => b.onclick = async () => { if (await ask('Delete this user and all their tasks?', 'Delete', 'Cancel')) { await api('DELETE', '/api/admin/users/' + b.dataset.d); draw() } });
+                o.querySelectorAll('[data-r]').forEach(b => b.onclick = async () => { if (await ask('Reset this user\'s password?', 'Reset', 'Cancel')) { const r = await api('POST', '/api/admin/users/' + b.dataset.r + '/reset'); prompt('New temporary password (copy it and give it to the user):', r.password) } })
+            }
+            draw().catch(x => o.firstChild.innerHTML = '<p class="err">' + esc(x.message) + '</p>')
+        }
+        async function share() {
+            const { url } = await api('POST', '/api/share'); let ok = false;
+            try { await navigator.clipboard.writeText(url); ok = true } catch (e) { }
+            const o = document.createElement('div'); o.className = 'ov';
+            o.innerHTML = `<div class="md"><h2 style="font-size:17px">Share your calendar</h2><p style="font-size:13px;color:var(--mut)">${ok ? 'Link copied! ' : ''}Anyone with this link can view your calendar (read-only). It always shows your latest tasks.</p><textarea readonly style="min-height:60px">${esc(url)}</textarea><div class="row"><button class="d" id="st">Stop sharing</button><span class="sp"></span><button class="p" id="ok">Done</button></div></div>`;
+            o.querySelector('#ok').onclick = () => o.remove();
+            o.querySelector('#st').onclick = async () => { if (await ask('Turn off this link? It will stop working.', 'Stop sharing', 'Cancel')) { await api('DELETE', '/api/share'); o.remove() } };
+            document.body.appendChild(o); o.querySelector('textarea').select()
+        }
+
+        function editor(t, ro) {
+            let d = { ...t }, dirty = false; const o = document.createElement('div'); o.className = 'ov'; const dis = ro ? 'disabled' : '';
+            o.innerHTML = `<div class="md"><div class="row" style="margin:0 0 4px"><h2 style="font-size:17px;margin:0;flex:1">${ro ? 'Task' : t.id == null ? 'New task' : 'Edit task'}</h2><button class="x" id="cl" title="Close">✕</button></div>
+<label>Title</label><input id="ti" ${dis} value="${esc(d.title)}">
+<label>Date</label><input id="da" type="date" ${dis} value="${d.date}">
+<label>Notes</label><textarea id="no" ${dis}>${esc(d.notes)}</textarea>
+<label>Link</label><input id="li" ${dis} placeholder="https://..." value="${esc(d.link)}"><div id="lk"></div>
+${ro ? '' : '<label>Image</label><input id="im" type="file" accept="image/*">'}<div id="pi"></div>
+<label style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--fg)"><input id="dn" type="checkbox" style="width:auto" ${dis} ${d.done ? 'checked' : ''}> Mark as done</label>
+<div class="err" id="er"></div>
+${ro ? '' : `<div class="row">${t.id == null ? '' : '<button class="d" id="de">Delete</button><span class="sp"></span>'}<button class="p" id="sv">Save</button></div>`}</div>`;
+            document.body.appendChild(o);
+            const pv = () => {
+                $('#pi').innerHTML = d.img ? `<img src="${d.img}" alt="">` + (ro ? '' : '<button id="ri" style="margin-top:6px">Remove image</button>') : '';
+                const r = $('#ri'); if (r) r.onclick = () => { d.img = ''; dirty = true; pv() };
+                $('#lk').innerHTML = /^https?:\/\//i.test(d.link || '') ? `<a href="${esc(d.link)}" target="_blank" rel="noopener noreferrer">Open link ↗</a>` : ''
+            };
+            pv();
+            o.querySelectorAll('input,textarea').forEach(i => i.oninput = () => { dirty = true; if (i.id === 'li') { d.link = i.value; pv() } });
+            const im = $('#im'); if (im) im.onchange = () => { const f = im.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { const g = new Image(); g.onload = () => { const s = Math.min(1, 700 / g.width), c = document.createElement('canvas'); c.width = g.width * s; c.height = g.height * s; c.getContext('2d').drawImage(g, 0, 0, c.width, c.height); d.img = c.toDataURL('image/jpeg', .75); dirty = true; pv() }; g.src = rd.result }; rd.readAsDataURL(f) };
+            // X -> [Close] or [Cancel]
+            o.querySelector('#cl').onclick = async () => { if (ro || await ask(dirty ? 'Close without saving? Unsaved changes will be lost.' : 'Close this task?', 'Close', 'Cancel')) o.remove() };
+            if (!ro) {
+                // Save -> [Save] or [Cancel]
+                o.querySelector('#sv').onclick = async () => {
+                    if (!await ask('Save this task?', 'Save', 'Cancel')) return;
+                    const body = { title: $('#ti').value, date: $('#da').value || todayS(), notes: $('#no').value, link: $('#li').value.trim(), img: d.img, done: $('#dn').checked };
+                    try { t.id == null ? await api('POST', '/api/tasks', body) : await api('PUT', '/api/tasks/' + t.id, body); await loadTasks(); o.remove(); main() }
+                    catch (x) { $('#er').textContent = x.message }
+                };
+                const de = o.querySelector('#de'); if (de) de.onclick = async () => {
+                    if (!await ask('Delete this task permanently?', 'Delete', 'Cancel')) return;
+                    try { await api('DELETE', '/api/tasks/' + t.id); await loadTasks(); o.remove(); main() } catch (x) { $('#er').textContent = x.message }
+                }
+            }
+        }
+
+        (async () => {
+            if (token) { try { shared = await api('GET', '/api/shared/' + token); main() } catch (e) { app.innerHTML = '<div class="auth"><h1>Link not found</h1><p>This shared calendar link is invalid or was turned off.</p></div>' } return }
+            try { const me = await api('GET', '/api/me'); user = me.username; isAdmin = !!me.is_admin; await loadTasks(); main() } catch (e) { authView('login') }
+        })();
+    </script>
+</body>
+
+</html>
